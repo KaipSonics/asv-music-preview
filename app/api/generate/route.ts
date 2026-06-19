@@ -13,7 +13,7 @@ import {
   buildTitle,
   buildSubtitle,
   type Selection,
-  type GenreOrAny,
+  type Genre,
   type MoodLabel,
   type TempoLabel,
 } from "@/lib/options";
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // Собираем и валидируем выбор по элементам
     const sel = {} as Selection;
     for (const el of ELEMENTS) {
-      const value = body[el.key] as GenreOrAny;
+      const value = body[el.key] as Genre;
       if (!GENRE_OPTIONS.includes(value)) {
         return NextResponse.json(
           { error: `Неверный жанр для элемента «${el.label}»` },

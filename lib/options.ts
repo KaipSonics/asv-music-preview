@@ -2,7 +2,7 @@
 // Единый источник правды для вариантов выбора и сборки промпта.
 //
 // Концепция «эклектики»: пользователь собирает трек по элементам —
-// у каждого элемента (бит/бас/мелодия) может быть свой жанр.
+// у каждого элемента (бит/бас/мелодия) свой жанр.
 // Настроение и темп — общие на весь трек.
 //
 // На экране показываем русские подписи (темп — короткими англ. словами),
@@ -10,8 +10,6 @@
 // BPM рассчитывается от жанра БИТА (драмки) и выбранного темпа.
 
 // ───────────────────────── Жанры ─────────────────────────
-
-export const ANY = "Любой";
 
 export const GENRES = [
   "Pop",
@@ -24,9 +22,8 @@ export const GENRES = [
 ] as const;
 
 export type Genre = (typeof GENRES)[number];
-export type GenreOrAny = Genre | typeof ANY;
 
-export const GENRE_OPTIONS: GenreOrAny[] = [ANY, ...GENRES];
+export const GENRE_OPTIONS: Genre[] = [...GENRES];
 
 const GENRE_EN: Record<Genre, string> = {
   Pop: "pop",
@@ -48,7 +45,6 @@ const BPM: Record<Genre, [number, number, number]> = {
   Rock: [100, 120, 140],
   Dancehall: [90, 100, 105],
 };
-const BPM_ANY: [number, number, number] = [90, 115, 140];
 
 // ───────────────────────── Элементы трека ─────────────────────────
 
@@ -59,6 +55,13 @@ export const ELEMENTS = [
 ] as const;
 
 export type ElementKey = (typeof ELEMENTS)[number]["key"];
+
+// Жанры по умолчанию (эклектичный пример)
+export const DEFAULTS: Record<ElementKey, Genre> = {
+  beat: "Trap",
+  bass: "House",
+  melody: "Pop",
+};
 
 // ───────────────────────── Настроение ─────────────────────────
 
@@ -85,9 +88,9 @@ export type TempoLabel = (typeof TEMPOS)[number]["label"];
 // ───────────────────────── Выбор пользователя ─────────────────────────
 
 export type Selection = {
-  beat: GenreOrAny;
-  bass: GenreOrAny;
-  melody: GenreOrAny;
+  beat: Genre;
+  bass: Genre;
+  melody: Genre;
   mood: MoodLabel;
   tempo: TempoLabel;
 };
@@ -95,23 +98,16 @@ export type Selection = {
 // ───────────────────────── Сборка промпта ─────────────────────────
 
 export function buildPrompt(sel: Selection): string {
-  const parts: string[] = [];
-  for (const el of ELEMENTS) {
-    const g = sel[el.key] as GenreOrAny;
-    if (g !== ANY) parts.push(`${GENRE_EN[g as Genre]} ${el.role}`);
-  }
+  const parts = ELEMENTS.map(
+    (el) => `${GENRE_EN[sel[el.key] as Genre]} ${el.role}`
+  );
 
-  const layers =
-    parts.length > 0
-      ? `eclectic instrumental track combining ${parts.join(", ")}`
-      : "modern instrumental track";
-
+  const layers = `eclectic instrumental track combining ${parts.join(", ")}`;
   const moodHint = MOODS.find((m) => m.label === sel.mood)?.hint || "";
 
   const tempo = TEMPOS.find((t) => t.label === sel.tempo);
   const idx = tempo?.idx ?? 1;
-  const bpmArr = sel.beat !== ANY ? BPM[sel.beat as Genre] : BPM_ANY;
-  const bpm = bpmArr[idx];
+  const bpm = BPM[sel.beat as Genre][idx];
 
   return `${layers}. Mood: ${moodHint}. ${tempo?.hint || ""}, around ${bpm} bpm. high quality, catchy hook, no vocals.`;
 }
@@ -123,8 +119,5 @@ export function buildTitle(sel: Selection): string {
 
 // Описание комбинации элементов на русском (для карточки результата)
 export function buildSubtitle(sel: Selection): string {
-  const named = ELEMENTS.filter((el) => (sel[el.key] as GenreOrAny) !== ANY).map(
-    (el) => `${el.label}: ${sel[el.key]}`
-  );
-  return named.length ? named.join(" · ") : "Микс на усмотрение нейросети";
+  return ELEMENTS.map((el) => `${el.label}: ${sel[el.key]}`).join(" · ");
 }

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import {
-  ANY,
   GENRE_OPTIONS,
   ELEMENTS,
+  DEFAULTS,
   MOODS,
   TEMPOS,
-  type GenreOrAny,
+  type Genre,
   type MoodLabel,
   type TempoLabel,
 } from "@/lib/options";
@@ -17,10 +17,10 @@ const TELEGRAM_URL = "https://t.me/asv_familyl";
 type Result = { audioUrl: string; title: string; subtitle: string };
 
 export default function Home() {
-  // Жанр по каждому элементу (по умолчанию «Любой»)
-  const [beat, setBeat] = useState<GenreOrAny>(ANY);
-  const [bass, setBass] = useState<GenreOrAny>(ANY);
-  const [melody, setMelody] = useState<GenreOrAny>(ANY);
+  // Жанр по каждому элементу
+  const [beat, setBeat] = useState<Genre>(DEFAULTS.beat);
+  const [bass, setBass] = useState<Genre>(DEFAULTS.bass);
+  const [melody, setMelody] = useState<Genre>(DEFAULTS.melody);
 
   const [mood, setMood] = useState<MoodLabel>("Энергично");
   const [tempo, setTempo] = useState<TempoLabel>("Mid");
@@ -29,12 +29,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
-  const setters: Record<string, (v: GenreOrAny) => void> = {
+  const setters: Record<string, (v: Genre) => void> = {
     beat: setBeat,
     bass: setBass,
     melody: setMelody,
   };
-  const values: Record<string, GenreOrAny> = { beat, bass, melody };
+  const values: Record<string, Genre> = { beat, bass, melody };
 
   async function handleGenerate() {
     setLoading(true);
@@ -81,9 +81,7 @@ export default function Home() {
                   {GENRE_OPTIONS.map((g) => (
                     <button
                       key={g}
-                      className={`chip ${values[el.key] === g ? "active" : ""} ${
-                        g === ANY ? "chip-any" : ""
-                      }`}
+                      className={`chip ${values[el.key] === g ? "active" : ""}`}
                       onClick={() => setters[el.key](g)}
                       type="button"
                     >
