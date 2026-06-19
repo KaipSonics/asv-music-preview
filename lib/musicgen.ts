@@ -1,16 +1,64 @@
 // lib/musicgen.ts
 // Генерация аудио-хука по текстовому промпту.
 // Провайдер переключается переменной окружения AUDIO_PROVIDER:
-//   - "huggingface" (по умолчанию, бесплатно)
+//   - "fal"         (по умолчанию: fal.ai, стартовые бесплатные кредиты)
 //   - "replicate"   (платно, качество выше)
+//   - "huggingface" (устар.: serverless MusicGen закрыли, оставлено как запас)
 //
 // Возвращаем единый результат: { audioUrl, contentType }
-//   - HuggingFace -> audioUrl это data:-URL (аудио зашито в строку base64)
-//   - Replicate   -> audioUrl это обычная ссылка на mp3
+//   - fal / Replicate -> audioUrl это обычная ссылка на аудиофайл
+//   - HuggingFace     -> audioUrl это data:-URL (аудио зашито в base64)
 
 export type GenResult = { audioUrl: string; contentType: string };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// ───────────────────────── fal.ai (стартовые кредиты) ─────────────────────────
+
+async function generateFal(prompt: string): Promise<GenResult> {
+  const key = process.env.FAL_KEY;
+  if (!key) {
+    throw new Error("Нет ключа fal.ai. Задай FAL_KEY в переменных окружения (Railway → Variables).");
+  }
+
+  const model = process.env.FAL_MODEL || "fal-ai/stable-audio";
+  const seconds = Number(process.env.FAL_SECONDS || 15);
+
+  // Очередь fal: ставим задачу, затем опрашиваем статус.
+  const submitRes = await fetch(`https://queue.fal.run/${model}`, {
+    method: "POST",
+    headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, seconds_total: seconds }),
+  });
+
+  if (!submitRes.ok) {
+    const txt = await submitRes.text();
+    throw new Error(`fal.ai вернул ошибку ${submitRes.status}: ${txt.slice(0, 300)}`);
+  }
+
+  const submit = await submitRes.json();
+  const statusUrl: string = submit.status_url;
+  const responseUrl: string = submit.response_url;
+
+  // Ждём готовности (обычно несколько секунд)
+  for (let i = 0; i < 60; i++) {
+    await sleep(2000);
+    const stRes = await fetch(statusUrl, { headers: { Authorization: `Key ${key}` } });
+    const st = await stRes.json();
+    if (st.status === "COMPLETED") break;
+    if (st.status === "FAILED" || st.status === "ERROR") {
+      throw new Error("fal.ai: генерация не удалась.");
+    }
+  }
+
+  const finalRes = await fetch(responseUrl, { headers: { Authorization: `Key ${key}` } });
+  const out = await finalRes.json();
+  const url = out?.audio_file?.url || out?.audio?.url || out?.url;
+  if (!url) {
+    throw new Error("fal.ai не вернул аудио. Ответ: " + JSON.stringify(out).slice(0, 200));
+  }
+  return { audioUrl: url, contentType: out?.audio_file?.content_type || "audio/mpeg" };
+}
 
 // ───────────────────────── Hugging Face (бесплатно) ─────────────────────────
 
@@ -129,7 +177,8 @@ async function generateReplicate(prompt: string): Promise<GenResult> {
 // ───────────────────────── Точка входа ─────────────────────────
 
 export async function generateAudio(prompt: string): Promise<GenResult> {
-  const provider = (process.env.AUDIO_PROVIDER || "huggingface").toLowerCase();
+  const provider = (process.env.AUDIO_PROVIDER || "fal").toLowerCase();
   if (provider === "replicate") return generateReplicate(prompt);
-  return generateHuggingFace(prompt);
+  if (provider === "huggingface") return generateHuggingFace(prompt);
+  return generateFal(prompt);
 }
