@@ -157,6 +157,45 @@ h3,
   box-shadow: 0 0 16px var(--neon-glow);
 }
 
+.elements {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.element-row {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.element-name {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+
+.chip-any {
+  opacity: 0.85;
+  font-style: italic;
+}
+
+@media (max-width: 560px) {
+  .element-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .element-name {
+    color: var(--neon);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+}
+
 .tempo-row {
   display: flex;
   align-items: center;

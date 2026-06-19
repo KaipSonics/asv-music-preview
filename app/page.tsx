@@ -2,27 +2,41 @@
 
 import { useState } from "react";
 import {
-  GENRES,
+  ANY,
+  GENRE_OPTIONS,
+  ELEMENTS,
   MOODS,
-  TEMPO_MIN,
-  TEMPO_MAX,
-  TEMPO_DEFAULT,
-  type Genre,
-  type Mood,
+  CHARACTERS,
+  type GenreOrAny,
+  type MoodLabel,
+  type CharacterLabel,
 } from "@/lib/options";
 
 const TELEGRAM_URL = "https://t.me/asv_familyl";
 
-type Result = { audioUrl: string; title: string; prompt: string };
+type Result = { audioUrl: string; title: string; subtitle: string };
 
 export default function Home() {
-  const [genre, setGenre] = useState<Genre>("Pop");
-  const [mood, setMood] = useState<Mood>("Energetic");
-  const [tempo, setTempo] = useState<number>(TEMPO_DEFAULT);
+  // Жанр по каждому элементу (по умолчанию «Любой»)
+  const [beat, setBeat] = useState<GenreOrAny>(ANY);
+  const [bass, setBass] = useState<GenreOrAny>(ANY);
+  const [harmony, setHarmony] = useState<GenreOrAny>(ANY);
+  const [lead, setLead] = useState<GenreOrAny>(ANY);
+
+  const [mood, setMood] = useState<MoodLabel>("Энергично");
+  const [character, setCharacter] = useState<CharacterLabel>("Драйв");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+
+  const setters: Record<string, (v: GenreOrAny) => void> = {
+    beat: setBeat,
+    bass: setBass,
+    harmony: setHarmony,
+    lead: setLead,
+  };
+  const values: Record<string, GenreOrAny> = { beat, bass, harmony, lead };
 
   async function handleGenerate() {
     setLoading(true);
@@ -32,7 +46,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ genre, mood, tempo }),
+        body: JSON.stringify({ beat, bass, harmony, lead, mood, character }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
@@ -49,28 +63,37 @@ export default function Home() {
       <header className="hero">
         <span className="badge">ASV Production</span>
         <h1>
-          Генератор <span className="accent">аудио-превью</span>
+          Собери свой <span className="accent">трек</span>
         </h1>
         <p>
-          Выбери жанр, настроение и темп — нейросеть создаст короткий хук.
-          Послушай и обсуди свой трек с нами.
+          Выбери жанр для каждого элемента, настроение и характер —
+          нейросеть соберёт уникальное превью. Эклектика приветствуется.
         </p>
       </header>
 
       <section className="panel">
-        {/* Жанр */}
+        {/* Элементы трека */}
         <div className="field">
-          <div className="field-label">Жанр</div>
-          <div className="chips">
-            {GENRES.map((g) => (
-              <button
-                key={g}
-                className={`chip ${genre === g ? "active" : ""}`}
-                onClick={() => setGenre(g)}
-                type="button"
-              >
-                {g}
-              </button>
+          <div className="field-label">Жанр по элементам</div>
+          <div className="elements">
+            {ELEMENTS.map((el) => (
+              <div className="element-row" key={el.key}>
+                <div className="element-name">{el.label}</div>
+                <div className="chips">
+                  {GENRE_OPTIONS.map((g) => (
+                    <button
+                      key={g}
+                      className={`chip ${values[el.key] === g ? "active" : ""} ${
+                        g === ANY ? "chip-any" : ""
+                      }`}
+                      onClick={() => setters[el.key](g)}
+                      type="button"
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -81,31 +104,31 @@ export default function Home() {
           <div className="chips">
             {MOODS.map((m) => (
               <button
-                key={m}
-                className={`chip ${mood === m ? "active" : ""}`}
-                onClick={() => setMood(m)}
+                key={m.label}
+                className={`chip ${mood === m.label ? "active" : ""}`}
+                onClick={() => setMood(m.label)}
                 type="button"
               >
-                {m}
+                {m.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Темп */}
+        {/* Характер (вместо BPM) */}
         <div className="field">
-          <div className="field-label">Темп</div>
-          <div className="tempo-row">
-            <input
-              type="range"
-              min={TEMPO_MIN}
-              max={TEMPO_MAX}
-              value={tempo}
-              onChange={(e) => setTempo(Number(e.target.value))}
-            />
-            <div className="tempo-value">
-              {tempo} <span>BPM</span>
-            </div>
+          <div className="field-label">Характер</div>
+          <div className="chips">
+            {CHARACTERS.map((c) => (
+              <button
+                key={c.label}
+                className={`chip ${character === c.label ? "active" : ""}`}
+                onClick={() => setCharacter(c.label)}
+                type="button"
+              >
+                {c.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -131,7 +154,7 @@ export default function Home() {
         {result && (
           <div className="result">
             <h3>{result.title}</h3>
-            <div className="desc">{tempo} BPM · превью-хук</div>
+            <div className="desc">{result.subtitle}</div>
             <audio controls controlsList="nodownload" src={result.audioUrl}>
               Ваш браузер не поддерживает аудио.
             </audio>
