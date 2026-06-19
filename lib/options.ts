@@ -2,11 +2,12 @@
 // Единый источник правды для вариантов выбора и сборки промпта.
 //
 // Концепция «эклектики»: пользователь собирает трек по элементам —
-// у каждого элемента (бит/бас/гармония/лид) может быть свой жанр.
-// Настроение и «характер» (вместо BPM) — общие на весь трек.
+// у каждого элемента (бит/бас/мелодия) может быть свой жанр.
+// Настроение и темп — общие на весь трек.
 //
-// На экране показываем русские подписи, а нейросети отправляем
-// английские подсказки (модели понимают их точнее).
+// На экране показываем русские подписи (темп — короткими англ. словами),
+// а нейросети отправляем английские подсказки — модели понимают их точнее.
+// BPM рассчитывается от жанра БИТА (драмки) и выбранного темпа.
 
 // ───────────────────────── Жанры ─────────────────────────
 
@@ -17,14 +18,14 @@ export const GENRES = [
   "House",
   "Hip-Hop",
   "Trap",
-  "Drum n Bass",
+  "DnB",
   "Rock",
+  "Dancehall",
 ] as const;
 
 export type Genre = (typeof GENRES)[number];
 export type GenreOrAny = Genre | typeof ANY;
 
-// Варианты для выбора по элементу: «Любой» + список жанров
 export const GENRE_OPTIONS: GenreOrAny[] = [ANY, ...GENRES];
 
 const GENRE_EN: Record<Genre, string> = {
@@ -32,17 +33,29 @@ const GENRE_EN: Record<Genre, string> = {
   House: "house",
   "Hip-Hop": "hip-hop",
   Trap: "trap",
-  "Drum n Bass": "drum and bass",
+  DnB: "drum and bass",
   Rock: "rock",
+  Dancehall: "dancehall",
 };
+
+// Характерный BPM по жанру бита: [slow, mid, fast]
+const BPM: Record<Genre, [number, number, number]> = {
+  Pop: [100, 115, 128],
+  House: [118, 123, 128],
+  "Hip-Hop": [80, 90, 100],
+  Trap: [130, 140, 150],
+  DnB: [170, 174, 176],
+  Rock: [100, 120, 140],
+  Dancehall: [90, 100, 105],
+};
+const BPM_ANY: [number, number, number] = [90, 115, 140];
 
 // ───────────────────────── Элементы трека ─────────────────────────
 
 export const ELEMENTS = [
   { key: "beat", label: "Бит", role: "beat and drums" },
   { key: "bass", label: "Бас", role: "bassline" },
-  { key: "harmony", label: "Гармония", role: "chords and harmony" },
-  { key: "lead", label: "Лид", role: "lead melody" },
+  { key: "melody", label: "Мелодия", role: "melody and harmony" },
 ] as const;
 
 export type ElementKey = (typeof ELEMENTS)[number]["key"];
@@ -50,9 +63,8 @@ export type ElementKey = (typeof ELEMENTS)[number]["key"];
 // ───────────────────────── Настроение ─────────────────────────
 
 export const MOODS = [
-  { label: "Лето", hint: "summery, bright, tropical, uplifting" },
   { label: "Романтика", hint: "romantic, warm, tender, emotional" },
-  { label: "Атмосфера", hint: "atmospheric, ambient, spacious, cinematic" },
+  { label: "Мечтательно", hint: "dreamy, airy, atmospheric yet warm, uplifting" },
   { label: "Энергично", hint: "energetic, driving, punchy" },
   { label: "Агрессивно", hint: "aggressive, hard, dark, intense" },
   { label: "Грусть", hint: "melancholic, sad, minor key, emotional" },
@@ -60,26 +72,24 @@ export const MOODS = [
 
 export type MoodLabel = (typeof MOODS)[number]["label"];
 
-// ───────────────────────── Характер (вместо BPM) ─────────────────────────
+// ───────────────────────── Темп (BPM считается от жанра бита) ─────────────────────────
 
-export const CHARACTERS = [
-  { label: "Чилл", hint: "chill, slow, relaxed, downtempo" },
-  { label: "Грув", hint: "groovy, mid-tempo, head-nodding" },
-  { label: "Драйв", hint: "driving, upbeat, high energy" },
-  { label: "Жёстко", hint: "hard, fast, intense, banging" },
+export const TEMPOS = [
+  { label: "Slow", idx: 0 as const, hint: "slow tempo" },
+  { label: "Mid", idx: 1 as const, hint: "medium tempo" },
+  { label: "Fast", idx: 2 as const, hint: "fast tempo" },
 ] as const;
 
-export type CharacterLabel = (typeof CHARACTERS)[number]["label"];
+export type TempoLabel = (typeof TEMPOS)[number]["label"];
 
 // ───────────────────────── Выбор пользователя ─────────────────────────
 
 export type Selection = {
   beat: GenreOrAny;
   bass: GenreOrAny;
-  harmony: GenreOrAny;
-  lead: GenreOrAny;
+  melody: GenreOrAny;
   mood: MoodLabel;
-  character: CharacterLabel;
+  tempo: TempoLabel;
 };
 
 // ───────────────────────── Сборка промпта ─────────────────────────
@@ -97,14 +107,18 @@ export function buildPrompt(sel: Selection): string {
       : "modern instrumental track";
 
   const moodHint = MOODS.find((m) => m.label === sel.mood)?.hint || "";
-  const charHint = CHARACTERS.find((c) => c.label === sel.character)?.hint || "";
 
-  return `${layers}. Mood: ${moodHint}. ${charHint}. high quality, catchy hook, no vocals.`;
+  const tempo = TEMPOS.find((t) => t.label === sel.tempo);
+  const idx = tempo?.idx ?? 1;
+  const bpmArr = sel.beat !== ANY ? BPM[sel.beat as Genre] : BPM_ANY;
+  const bpm = bpmArr[idx];
+
+  return `${layers}. Mood: ${moodHint}. ${tempo?.hint || ""}, around ${bpm} bpm. high quality, catchy hook, no vocals.`;
 }
 
-// Короткое читаемое название результата на русском
+// Короткое читаемое название результата
 export function buildTitle(sel: Selection): string {
-  return `${sel.mood} · ${sel.character}`;
+  return `${sel.mood} · ${sel.tempo}`;
 }
 
 // Описание комбинации элементов на русском (для карточки результата)

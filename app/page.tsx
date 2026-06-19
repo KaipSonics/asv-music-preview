@@ -6,10 +6,10 @@ import {
   GENRE_OPTIONS,
   ELEMENTS,
   MOODS,
-  CHARACTERS,
+  TEMPOS,
   type GenreOrAny,
   type MoodLabel,
-  type CharacterLabel,
+  type TempoLabel,
 } from "@/lib/options";
 
 const TELEGRAM_URL = "https://t.me/asv_familyl";
@@ -20,11 +20,10 @@ export default function Home() {
   // Жанр по каждому элементу (по умолчанию «Любой»)
   const [beat, setBeat] = useState<GenreOrAny>(ANY);
   const [bass, setBass] = useState<GenreOrAny>(ANY);
-  const [harmony, setHarmony] = useState<GenreOrAny>(ANY);
-  const [lead, setLead] = useState<GenreOrAny>(ANY);
+  const [melody, setMelody] = useState<GenreOrAny>(ANY);
 
   const [mood, setMood] = useState<MoodLabel>("Энергично");
-  const [character, setCharacter] = useState<CharacterLabel>("Драйв");
+  const [tempo, setTempo] = useState<TempoLabel>("Mid");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +32,9 @@ export default function Home() {
   const setters: Record<string, (v: GenreOrAny) => void> = {
     beat: setBeat,
     bass: setBass,
-    harmony: setHarmony,
-    lead: setLead,
+    melody: setMelody,
   };
-  const values: Record<string, GenreOrAny> = { beat, bass, harmony, lead };
+  const values: Record<string, GenreOrAny> = { beat, bass, melody };
 
   async function handleGenerate() {
     setLoading(true);
@@ -46,7 +44,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ beat, bass, harmony, lead, mood, character }),
+        body: JSON.stringify({ beat, bass, melody, mood, tempo }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
@@ -66,7 +64,7 @@ export default function Home() {
           Собери свой <span className="accent">трек</span>
         </h1>
         <p>
-          Выбери жанр для каждого элемента, настроение и характер —
+          Выбери жанр для каждого элемента, настроение и темп —
           нейросеть соберёт уникальное превью. Эклектика приветствуется.
         </p>
       </header>
@@ -115,18 +113,18 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Характер (вместо BPM) */}
+        {/* Темп */}
         <div className="field">
-          <div className="field-label">Характер</div>
+          <div className="field-label">Темп</div>
           <div className="chips">
-            {CHARACTERS.map((c) => (
+            {TEMPOS.map((t) => (
               <button
-                key={c.label}
-                className={`chip ${character === c.label ? "active" : ""}`}
-                onClick={() => setCharacter(c.label)}
+                key={t.label}
+                className={`chip ${tempo === t.label ? "active" : ""}`}
+                onClick={() => setTempo(t.label)}
                 type="button"
               >
-                {c.label}
+                {t.label}
               </button>
             ))}
           </div>

@@ -7,7 +7,7 @@ import { generateAudio } from "@/lib/musicgen";
 import {
   GENRE_OPTIONS,
   MOODS,
-  CHARACTERS,
+  TEMPOS,
   ELEMENTS,
   buildPrompt,
   buildTitle,
@@ -15,7 +15,7 @@ import {
   type Selection,
   type GenreOrAny,
   type MoodLabel,
-  type CharacterLabel,
+  type TempoLabel,
 } from "@/lib/options";
 
 // Генерация может занять до минуты — даём роуту время.
@@ -40,15 +40,15 @@ export async function POST(req: NextRequest) {
     }
 
     const mood = body.mood as MoodLabel;
-    const character = body.character as CharacterLabel;
+    const tempo = body.tempo as TempoLabel;
     if (!MOODS.some((m) => m.label === mood)) {
       return NextResponse.json({ error: "Неверное настроение" }, { status: 400 });
     }
-    if (!CHARACTERS.some((c) => c.label === character)) {
-      return NextResponse.json({ error: "Неверный характер" }, { status: 400 });
+    if (!TEMPOS.some((t) => t.label === tempo)) {
+      return NextResponse.json({ error: "Неверный темп" }, { status: 400 });
     }
     sel.mood = mood;
-    sel.character = character;
+    sel.tempo = tempo;
 
     const prompt = buildPrompt(sel);
     const result = await generateAudio(prompt);
