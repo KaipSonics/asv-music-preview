@@ -35,11 +35,20 @@ body {
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
   color: var(--text);
-  /* загруженный космический фон поверх запасного градиента */
-  background:
-    linear-gradient(rgba(5, 4, 10, 0.35), rgba(5, 4, 10, 0.55)),
-    url("/background.jpg") center / cover no-repeat fixed,
-    linear-gradient(160deg, var(--bg-mid), var(--bg-deep));
+  /* Если в public/background.jpg положить файл — он станет фоном.
+     Пока файла нет — рисуем космос средствами CSS (как на исходной картинке):
+     тёмная база + центральная бирюзовая туманность с яркой вспышкой + боковые облака. */
+  background-color: #05040a;
+  background-image:
+    url("/background.jpg"),
+    radial-gradient(ellipse 24% 5% at 50% 55%, rgba(175, 247, 240, 0.5), transparent 70%),
+    radial-gradient(ellipse 68% 24% at 50% 54%, rgba(98, 225, 216, 0.22), transparent 65%),
+    radial-gradient(ellipse 32% 30% at 10% 50%, rgba(63, 191, 183, 0.16), transparent 60%),
+    radial-gradient(ellipse 30% 34% at 90% 46%, rgba(98, 225, 216, 0.16), transparent 62%),
+    linear-gradient(160deg, #0b0710, #05040a);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   background-attachment: fixed;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
