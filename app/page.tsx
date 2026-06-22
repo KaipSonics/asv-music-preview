@@ -24,6 +24,7 @@ export default function Home() {
 
   const [mood, setMood] = useState<MoodLabel>("Энергично");
   const [tempo, setTempo] = useState<TempoLabel>("Mid");
+  const [reference, setReference] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ beat, bass, melody, mood, tempo }),
+        body: JSON.stringify({ beat, bass, melody, mood, tempo, reference }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
@@ -59,7 +60,10 @@ export default function Home() {
   return (
     <main className="wrap">
       <header className="hero">
-        <span className="badge">ASV Production</span>
+        <div className="logo">
+          <span className="logo-asv">ASV</span>
+          <span className="logo-prod">production</span>
+        </div>
         <h1>
           Собери свой <span className="accent">трек</span>
         </h1>
@@ -70,26 +74,26 @@ export default function Home() {
       </header>
 
       <section className="panel">
-        {/* Элементы трека */}
+        {/* Элементы трека — выпадающие списки */}
         <div className="field">
           <div className="field-label">Жанр по элементам</div>
           <div className="elements">
             {ELEMENTS.map((el) => (
-              <div className="element-row" key={el.key}>
-                <div className="element-name">{el.label}</div>
-                <div className="chips">
-                  {GENRE_OPTIONS.map((g) => (
-                    <button
-                      key={g}
-                      className={`chip ${values[el.key] === g ? "active" : ""}`}
-                      onClick={() => setters[el.key](g)}
-                      type="button"
-                    >
-                      {g}
-                    </button>
-                  ))}
+              <label className="element-row" key={el.key}>
+                <span className="element-name">{el.label}</span>
+                <div className="select-wrap">
+                  <select
+                    value={values[el.key]}
+                    onChange={(e) => setters[el.key](e.target.value as Genre)}
+                  >
+                    {GENRE_OPTIONS.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              </label>
             ))}
           </div>
         </div>
@@ -126,6 +130,19 @@ export default function Home() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Комментарий к референсу */}
+        <div className="field ref">
+          <div className="field-label">
+            Комментарий к референсу <span>(необязательно)</span>
+          </div>
+          <textarea
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            maxLength={600}
+            placeholder="На что ориентироваться: примеры треков, артисты, нужный вайб, инструменты…"
+          />
         </div>
 
         <button

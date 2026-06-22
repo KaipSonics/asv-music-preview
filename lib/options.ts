@@ -66,7 +66,7 @@ export const DEFAULTS: Record<ElementKey, Genre> = {
 // ───────────────────────── Настроение ─────────────────────────
 
 export const MOODS = [
-  { label: "Романтика", hint: "romantic, warm, tender, emotional" },
+  { label: "Игриво", hint: "playful, fun, bouncy, lighthearted" },
   { label: "Мечтательно", hint: "dreamy, airy, atmospheric yet warm, uplifting" },
   { label: "Энергично", hint: "energetic, driving, punchy" },
   { label: "Агрессивно", hint: "aggressive, hard, dark, intense" },

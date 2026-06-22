@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Inter } from "next/font/google";
+import { Montserrat, Inter, Syncopate } from "next/font/google";
 import "./globals.css";
 
 // Те же шрифты, что на лендинге asvproduction.ru — для единого стиля.
@@ -12,6 +12,13 @@ const montserrat = Montserrat({
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
+});
+
+// Шрифт «production» в логотипе
+const syncopate = Syncopate({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-syncopate",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +34,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <body className={`${montserrat.variable} ${inter.variable}`}>{children}</body>
+      <body
+        className={`${montserrat.variable} ${inter.variable} ${syncopate.variable}`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

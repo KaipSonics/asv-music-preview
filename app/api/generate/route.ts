@@ -50,7 +50,13 @@ export async function POST(req: NextRequest) {
     sel.mood = mood;
     sel.tempo = tempo;
 
-    const prompt = buildPrompt(sel);
+    // Необязательный комментарий к референсу (помогает и модели, и заявке)
+    const reference =
+      typeof body.reference === "string" ? body.reference.trim().slice(0, 600) : "";
+
+    let prompt = buildPrompt(sel);
+    if (reference) prompt += ` Reference notes: ${reference}.`;
+
     const result = await generateAudio(prompt);
 
     return NextResponse.json({
