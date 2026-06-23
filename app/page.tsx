@@ -14,10 +14,10 @@ import {
 import VariantCard, { type Meta, type Variant } from "./VariantCard";
 import LoadingSteps from "./LoadingSteps";
 
-const TELEGRAM_URL = "https://t.me/asv_familyl";
+const VK_URL = "https://vk.com/asv_family";
 const STORAGE_KEY = "asv:lastResult";
 
-type GenResult = { meta: Meta; variants: Variant[] };
+type GenResult = { meta: Meta; variants: Variant[]; code?: string };
 
 export default function Home() {
   // Жанр по каждому элементу
@@ -32,6 +32,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function copyCode() {
+    if (!result?.code) return;
+    navigator.clipboard?.writeText(result.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const setters: Record<string, (v: Genre) => void> = {
     beat: setBeat,
@@ -59,7 +68,11 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
-      const r: GenResult = { meta: data.meta, variants: data.variants };
+      const r: GenResult = {
+        meta: data.meta,
+        variants: data.variants,
+        code: data.code,
+      };
       setResult(r);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
@@ -188,16 +201,32 @@ export default function Home() {
           <div className="convert">
             <h3>Понравилось направление?</h3>
             <p>
-              Мы можем создать полноценную аранжировку на основе выбранного вайба.
+              Мы создадим полноценную аранжировку на основе выбранного вайба.
             </p>
+
+            {result.code && (
+              <div className="order-code">
+                <span className="order-code-label">Код заявки</span>
+                <span className="order-code-value">{result.code}</span>
+                <button type="button" className="copy-btn" onClick={copyCode}>
+                  {copied ? "Скопировано ✓" : "Скопировать"}
+                </button>
+              </div>
+            )}
+
             <a
               className="convert-btn"
-              href={TELEGRAM_URL}
+              href={VK_URL}
               target="_blank"
               rel="noopener noreferrer"
             >
-              Обсудить проект →
+              Оформить заявку в VK →
             </a>
+
+            <p className="convert-hint">
+              Напишите этот код в сообщения нашего паблика — подберём по нему
+              ваш референс.
+            </p>
           </div>
         </section>
       )}

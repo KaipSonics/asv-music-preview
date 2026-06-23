@@ -68,6 +68,14 @@ export async function POST(req: NextRequest) {
       tempo: sel.tempo,
     };
 
+    // Код заявки: показываем клиенту, он присылает его в ВК.
+    // Этот же код зашиваем в название генерации на GenAPI (title) —
+    // по нему ASV находит нужный референс в истории GenAPI.
+    const code =
+      "ASV-" +
+      (Math.random().toString(36).slice(2, 6) + Date.now().toString(36).slice(-2))
+        .toUpperCase();
+
     const provider = (process.env.AUDIO_PROVIDER || "demo").toLowerCase();
 
     let variants: { name: string; audioUrl: string }[];
@@ -87,7 +95,7 @@ export async function POST(req: NextRequest) {
       }));
     }
 
-    return NextResponse.json({ meta, variants, prompt });
+    return NextResponse.json({ meta, variants, prompt, code });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("Ошибка генерации:", message);

@@ -681,6 +681,56 @@ h3,
   box-shadow: 0 0 42px var(--neon-glow);
 }
 
+.order-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border: 1px dashed var(--card-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.order-code-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.order-code-value {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  color: var(--neon);
+}
+
+.copy-btn {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.copy-btn:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+}
+
+.convert-hint {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
 @media (max-width: 560px) {
   .element-row {
     grid-template-columns: 84px 1fr;
