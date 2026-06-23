@@ -25,7 +25,7 @@ export default function Home() {
   const [bass, setBass] = useState<Genre>(DEFAULTS.bass);
   const [melody, setMelody] = useState<Genre>(DEFAULTS.melody);
 
-  const [mood, setMood] = useState<MoodLabel>("Энергично");
+  const [mood, setMood] = useState<MoodLabel>("Энергичный");
   const [tempo, setTempo] = useState<TempoLabel>("Mid");
   const [reference, setReference] = useState("");
 
@@ -78,9 +78,7 @@ export default function Home() {
           <span className="logo-asv">ASV</span>
           <span className="logo-prod">production</span>
         </div>
-        <h1>
-          Собери <span className="accent">референс</span> будущего трека
-        </h1>
+        <h1>Собери референс будущего трека</h1>
         <p>
           Выбери бит, бас, мелодию, настроение и темп. Получи несколько
           вариантов музыкального превью будущего трека.

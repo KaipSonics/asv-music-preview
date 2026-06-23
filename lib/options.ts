@@ -66,11 +66,13 @@ export const DEFAULTS: Record<ElementKey, Genre> = {
 // ───────────────────────── Настроение ─────────────────────────
 
 export const MOODS = [
-  { label: "Игриво", hint: "playful, fun, bouncy, lighthearted" },
-  { label: "Мечтательно", hint: "dreamy, airy, atmospheric yet warm, uplifting" },
-  { label: "Энергично", hint: "energetic, driving, punchy" },
-  { label: "Агрессивно", hint: "aggressive, hard, dark, intense" },
-  { label: "Грусть", hint: "melancholic, sad, minor key, emotional" },
+  { label: "Летний", hint: "summery, bright, sunny, tropical, uplifting" },
+  { label: "Романтичный", hint: "romantic, warm, tender, emotional" },
+  { label: "Атмосферный", hint: "atmospheric, ambient, spacious, cinematic" },
+  { label: "Грустный", hint: "melancholic, sad, minor key, emotional" },
+  { label: "Энергичный", hint: "energetic, driving, punchy, high energy" },
+  { label: "Дерзкий", hint: "bold, confident, swaggering, edgy" },
+  { label: "Ночной", hint: "nocturnal, dark, moody, late-night, deep" },
 ] as const;
 
 export type MoodLabel = (typeof MOODS)[number]["label"];
