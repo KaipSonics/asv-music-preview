@@ -76,7 +76,11 @@ export default function Home() {
       <header className="hero">
         <div className="logo">
           <span className="logo-asv">ASV</span>
-          <span className="logo-prod">production</span>
+          <span className="logo-prod">
+            {"production".split("").map((ch, i) => (
+              <span key={i}>{ch}</span>
+            ))}
+          </span>
         </div>
         <h1>Собери референс будущего трека</h1>
         <p>

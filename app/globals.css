@@ -82,7 +82,7 @@ h3,
 .logo {
   display: inline-flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   line-height: 0.9;
   margin-bottom: 26px;
 }
@@ -93,18 +93,22 @@ h3,
   font-weight: 700;
   color: var(--neon);
   letter-spacing: 0.06em;
+  text-align: center;
   text-shadow: 0 0 28px var(--neon-glow);
 }
 
+/* «production» растянуто на всю ширину ASV, буквы с равными промежутками */
 .logo-prod {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 8px;
+  padding-left: 0.06em; /* лёгкая поправка под наклон A */
   font-family: var(--font-syncopate), system-ui, sans-serif;
   font-weight: 700;
   color: #ffffff;
-  font-size: clamp(13px, 2.6vw, 22px);
-  letter-spacing: 0.34em;
+  font-size: clamp(11px, 2.1vw, 18px);
   text-transform: lowercase;
-  margin-top: 6px;
-  margin-left: 0.34em; /* компенсация трекинга, чтобы было по центру */
 }
 
 .hero h1 {
