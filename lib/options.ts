@@ -12,13 +12,14 @@
 // ───────────────────────── Жанры ─────────────────────────
 
 export const GENRES = [
-  "Pop",
-  "House",
-  "Hip-Hop",
-  "Trap",
-  "DnB",
-  "Rock",
-  "Dancehall",
+  "POP",
+  "POP DANCE",
+  "HOUSE",
+  "HIP-HOP",
+  "TRAP",
+  "DNB",
+  "ROCK",
+  "DANCEHALL",
 ] as const;
 
 export type Genre = (typeof GENRES)[number];
@@ -26,24 +27,26 @@ export type Genre = (typeof GENRES)[number];
 export const GENRE_OPTIONS: Genre[] = [...GENRES];
 
 const GENRE_EN: Record<Genre, string> = {
-  Pop: "pop",
-  House: "house",
-  "Hip-Hop": "hip-hop",
-  Trap: "trap",
-  DnB: "drum and bass",
-  Rock: "rock",
-  Dancehall: "dancehall",
+  POP: "pop",
+  "POP DANCE": "dance-pop, pop dance",
+  HOUSE: "house",
+  "HIP-HOP": "hip-hop",
+  TRAP: "trap",
+  DNB: "drum and bass",
+  ROCK: "rock",
+  DANCEHALL: "dancehall",
 };
 
 // Характерный BPM по жанру бита: [slow, mid, fast]
 const BPM: Record<Genre, [number, number, number]> = {
-  Pop: [100, 115, 128],
-  House: [118, 123, 128],
-  "Hip-Hop": [80, 90, 100],
-  Trap: [130, 140, 150],
-  DnB: [170, 174, 176],
-  Rock: [100, 120, 140],
-  Dancehall: [90, 100, 105],
+  POP: [100, 115, 128],
+  "POP DANCE": [118, 124, 128],
+  HOUSE: [118, 123, 128],
+  "HIP-HOP": [80, 90, 100],
+  TRAP: [130, 140, 150],
+  DNB: [170, 174, 176],
+  ROCK: [100, 120, 140],
+  DANCEHALL: [90, 100, 105],
 };
 
 // ───────────────────────── Элементы трека ─────────────────────────
@@ -58,9 +61,9 @@ export type ElementKey = (typeof ELEMENTS)[number]["key"];
 
 // Жанры по умолчанию (эклектичный пример)
 export const DEFAULTS: Record<ElementKey, Genre> = {
-  beat: "Trap",
-  bass: "House",
-  melody: "Pop",
+  beat: "TRAP",
+  bass: "HOUSE",
+  melody: "POP",
 };
 
 // ───────────────────────── Настроение ─────────────────────────
