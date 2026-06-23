@@ -124,15 +124,17 @@ export function buildPrompt(sel: Selection): string {
   const beat = GENRE_EN[sel.beat as Genre];
   const bass = GENRE_EN[sel.bass as Genre];
   const melody = GENRE_EN[sel.melody as Genre];
-  const moodHint = MOODS.find((m) => m.label === sel.mood)?.hint || "";
+  const moodShort = (MOODS.find((m) => m.label === sel.mood)?.hint || "")
+    .split(",")[0]
+    .trim();
   const bpm = getBpm(sel);
 
-  // Директивно: бит задаёт доминирующий жанр, бас/мелодия — оттенки.
+  // Директивно: бит = доминирующий жанр; луп-режим — ровная повторяющаяся
+  // структура без частых смен партов (важное в начале, чтобы не обрезалось).
   return (
-    `${beat} beat, ${bpm} bpm. Dominant genre: ${beat}. ` +
-    `Drums and groove are strictly ${beat}. ` +
-    `Bassline with ${bass} flavor. Melody in ${melody} style. ` +
-    `${moodHint}. Strictly instrumental, no vocals, no singing.`
+    `${beat}, ${bpm} bpm, instrumental loop, no vocals. ` +
+    `Repetitive steady ${beat} groove, minimal structure changes. ` +
+    `${beat} drums dominant, ${bass} bass, ${melody} melody. ${moodShort}.`
   ).slice(0, 195);
 }
 
