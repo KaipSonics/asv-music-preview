@@ -121,20 +121,19 @@ export function getSeconds(sel: Selection): number {
 }
 
 export function buildPrompt(sel: Selection): string {
-  const parts = ELEMENTS.map(
-    (el) => `${GENRE_EN[sel[el.key] as Genre]} ${el.role}`
-  );
-
-  const layers = `eclectic instrumental track combining ${parts.join(", ")}`;
+  const beat = GENRE_EN[sel.beat as Genre];
+  const bass = GENRE_EN[sel.bass as Genre];
+  const melody = GENRE_EN[sel.melody as Genre];
   const moodHint = MOODS.find((m) => m.label === sel.mood)?.hint || "";
-  const tempo = TEMPOS.find((t) => t.label === sel.tempo);
   const bpm = getBpm(sel);
 
+  // Директивно: бит задаёт доминирующий жанр, бас/мелодия — оттенки.
   return (
-    `${layers}. Mood: ${moodHint}. ${tempo?.hint || ""}, ${bpm} bpm. ` +
-    `Structure: ${BARS_HOOK}-bar hook then ${BARS_VERSE}-bar verse, exactly ${BARS_TOTAL} bars. ` +
-    `instrumental, no vocals, high quality.`
-  );
+    `${beat} beat, ${bpm} bpm. Dominant genre: ${beat}. ` +
+    `Drums and groove are strictly ${beat}. ` +
+    `Bassline with ${bass} flavor. Melody in ${melody} style. ` +
+    `${moodHint}. Strictly instrumental, no vocals, no singing.`
+  ).slice(0, 195);
 }
 
 // Короткое читаемое название результата
