@@ -98,10 +98,7 @@ export async function POST(req: NextRequest) {
     const prompt = reference ? `${basePrompt} Reference notes: ${reference}.` : basePrompt;
     const seconds = getSeconds(sel);
 
-    // ── Засчитываем попытку (до генерации, чтобы лимит работал и для async) ──
     const newCount = used + 1;
-    ipHits.set(ip, { date: day, count: newCount });
-
     const meta = {
       beat: sel.beat,
       bass: sel.bass,
@@ -109,31 +106,40 @@ export async function POST(req: NextRequest) {
       mood: sel.mood,
       tempo: sel.tempo,
     };
-    const base = {
+
+    // Счётчик увеличиваем только после успешного старта (неудача не съедает лимит)
+    const finalize = () => ipHits.set(ip, { date: day, count: newCount });
+    const base = () => ({
       code,
       reference,
       bpm: getBpm(sel),
       seconds,
       meta,
       remaining: DAILY_LIMIT - newCount,
-    };
+    });
 
     // ── Генерация ──
     const provider = (process.env.AUDIO_PROVIDER || "demo").toLowerCase();
 
     if (provider === "demo") {
-      return NextResponse.json({ ...base, audioUrl: DEMO_FILES[used % DEMO_FILES.length] });
+      finalize();
+      return NextResponse.json({
+        ...base(),
+        audioUrl: DEMO_FILES[used % DEMO_FILES.length],
+      });
     }
 
     if (provider === "genapi") {
       // Suno долгий (~2.5 мин): стартуем и отдаём requestId, клиент опрашивает
       const requestId = await startGenApi(prompt, { seconds, code, reference });
-      return NextResponse.json({ ...base, pending: true, requestId });
+      finalize();
+      return NextResponse.json({ ...base(), pending: true, requestId });
     }
 
     // Быстрые провайдеры (fal/replicate/hf) — синхронно
     const r = await generateAudio(prompt, { seconds, code, reference });
-    return NextResponse.json({ ...base, audioUrl: r.audioUrl });
+    finalize();
+    return NextResponse.json({ ...base(), audioUrl: r.audioUrl });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("Ошибка генерации:", message);

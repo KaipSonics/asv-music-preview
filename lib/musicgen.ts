@@ -201,7 +201,7 @@ export async function startGenApi(prompt: string, opts?: GenOpts): Promise<strin
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       title,
-      tags: prompt.slice(0, 400),
+      tags: prompt.slice(0, 190), // у Suno лимит tags 200 символов
       make_instrumental: true,
     }),
   });
