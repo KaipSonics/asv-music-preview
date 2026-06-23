@@ -20,7 +20,7 @@
   --card-border: rgba(98, 225, 216, 0.22);
   --text: #eae6f0;
   --text-dim: #a09ab8;
-  --font-dune: "Dune Rise", var(--font-display), system-ui, sans-serif;
+  --font-dune: "Dune Rise", system-ui, sans-serif;
 }
 
 * {
