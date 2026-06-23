@@ -40,6 +40,7 @@ export default function LoadingSteps() {
           </div>
         ))}
       </div>
+      <div className="loading-hint">Обычно занимает 1–3 минуты — не закрывай вкладку</div>
     </div>
   );
 }

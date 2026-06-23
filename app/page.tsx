@@ -60,6 +60,20 @@ export default function Home() {
 
   const limitReached = remaining !== null && remaining <= 0;
 
+  // Опрос асинхронной генерации (GenAPI/Suno ~2.5 мин)
+  async function pollStatus(requestId: string): Promise<string> {
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      const r = await fetch(`/api/status?id=${requestId}`);
+      const d = await r.json();
+      if (d.status === "success" && d.audioUrl) return d.audioUrl;
+      if (d.status === "error" || d.status === "failed") {
+        throw new Error(d.error || "Генерация не удалась");
+      }
+    }
+    throw new Error("Генерация затянулась — попробуйте ещё раз");
+  }
+
   async function handleGenerate() {
     setLoading(true);
     setError(null);
@@ -76,11 +90,15 @@ export default function Home() {
       }
       if (typeof data.remaining === "number") setRemaining(data.remaining);
 
+      const audioUrl = data.pending
+        ? await pollStatus(data.requestId)
+        : data.audioUrl;
+
       const nextNum = (history[0]?.num || 0) + 1;
       const item: Saved = {
         num: nextNum,
         code: data.code,
-        audioUrl: data.audioUrl,
+        audioUrl,
         reference: data.reference,
         meta: data.meta,
       };

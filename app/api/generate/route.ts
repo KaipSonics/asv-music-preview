@@ -6,7 +6,7 @@
 // Любой другой провайдер → реальная генерация.
 
 import { NextRequest, NextResponse } from "next/server";
-import { generateAudio } from "@/lib/musicgen";
+import { generateAudio, startGenApi } from "@/lib/musicgen";
 import {
   GENRE_OPTIONS,
   MOODS,
@@ -98,36 +98,42 @@ export async function POST(req: NextRequest) {
     const prompt = reference ? `${basePrompt} Reference notes: ${reference}.` : basePrompt;
     const seconds = getSeconds(sel);
 
-    // ── Генерация одного файла ──
-    const provider = (process.env.AUDIO_PROVIDER || "demo").toLowerCase();
-    let audioUrl: string;
-    if (provider === "demo") {
-      audioUrl = DEMO_FILES[used % DEMO_FILES.length];
-    } else {
-      // code и reference уйдут в данные генерации (для поиска в GenAPI)
-      const r = await generateAudio(prompt, { seconds, code, reference });
-      audioUrl = r.audioUrl;
-    }
-
-    // ── Засчитываем удачную генерацию ──
+    // ── Засчитываем попытку (до генерации, чтобы лимит работал и для async) ──
     const newCount = used + 1;
     ipHits.set(ip, { date: day, count: newCount });
 
-    return NextResponse.json({
+    const meta = {
+      beat: sel.beat,
+      bass: sel.bass,
+      melody: sel.melody,
+      mood: sel.mood,
+      tempo: sel.tempo,
+    };
+    const base = {
       code,
-      audioUrl,
       reference,
       bpm: getBpm(sel),
       seconds,
-      meta: {
-        beat: sel.beat,
-        bass: sel.bass,
-        melody: sel.melody,
-        mood: sel.mood,
-        tempo: sel.tempo,
-      },
+      meta,
       remaining: DAILY_LIMIT - newCount,
-    });
+    };
+
+    // ── Генерация ──
+    const provider = (process.env.AUDIO_PROVIDER || "demo").toLowerCase();
+
+    if (provider === "demo") {
+      return NextResponse.json({ ...base, audioUrl: DEMO_FILES[used % DEMO_FILES.length] });
+    }
+
+    if (provider === "genapi") {
+      // Suno долгий (~2.5 мин): стартуем и отдаём requestId, клиент опрашивает
+      const requestId = await startGenApi(prompt, { seconds, code, reference });
+      return NextResponse.json({ ...base, pending: true, requestId });
+    }
+
+    // Быстрые провайдеры (fal/replicate/hf) — синхронно
+    const r = await generateAudio(prompt, { seconds, code, reference });
+    return NextResponse.json({ ...base, audioUrl: r.audioUrl });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("Ошибка генерации:", message);

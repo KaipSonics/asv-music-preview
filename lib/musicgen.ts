@@ -180,6 +180,70 @@ async function generateReplicate(prompt: string, opts?: GenOpts): Promise<GenRes
 
 // ───────────────────────── Точка входа ─────────────────────────
 
+// ───────────────────────── GenAPI (gen-api.ru, рубли) ─────────────────────────
+// Suno генерит ~2.5 мин, поэтому работаем асинхронно: старт → опрос.
+
+const GENAPI_BASE = "https://api.gen-api.ru/api/v1";
+
+// Запускаем генерацию, возвращаем request_id. Код заявки и референс
+// зашиваем в title — ASV находит по нему генерацию в истории GenAPI.
+export async function startGenApi(prompt: string, opts?: GenOpts): Promise<string> {
+  const key = process.env.GENAPI_KEY;
+  if (!key) throw new Error("Нет ключа GenAPI. Задай GENAPI_KEY в переменных окружения.");
+  const model = process.env.GENAPI_MODEL || "suno";
+
+  const code = opts?.code || "ASV";
+  const ref = opts?.reference ? ` :: ${opts.reference}` : "";
+  const title = `${code}${ref}`.slice(0, 90);
+
+  const res = await fetch(`${GENAPI_BASE}/networks/${model}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      tags: prompt.slice(0, 400),
+      make_instrumental: true,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.request_id) {
+    throw new Error(`GenAPI вернул ошибку: ${JSON.stringify(data).slice(0, 300)}`);
+  }
+  return String(data.request_id);
+}
+
+// Опрос статуса. Возвращает audioUrl, когда готово.
+export async function pollGenApi(
+  requestId: string
+): Promise<{ status: string; audioUrl?: string; error?: string }> {
+  const key = process.env.GENAPI_KEY;
+  if (!key) throw new Error("Нет ключа GenAPI.");
+  const res = await fetch(`${GENAPI_BASE}/request/get/${requestId}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  const status: string = data.status || "unknown";
+
+  if (status === "success") {
+    const arr: unknown[] = Array.isArray(data.result) ? data.result : [];
+    let url = arr.find((x) => typeof x === "string" && (x as string).endsWith(".mp3")) as
+      | string
+      | undefined;
+    if (!url && Array.isArray(data.full_response)) {
+      const found = data.full_response.find(
+        (x: { url?: string }) => typeof x?.url === "string"
+      );
+      url = found?.url;
+    }
+    if (!url) return { status: "error", error: "GenAPI не вернул аудио" };
+    return { status, audioUrl: url };
+  }
+  if (status === "failed" || status === "error") {
+    return { status, error: data.error || "Генерация GenAPI не удалась" };
+  }
+  return { status: "processing" };
+}
+
 export async function generateAudio(
   prompt: string,
   opts?: GenOpts
