@@ -2,7 +2,9 @@
    Пока файла нет — подхватится запасной геометрический шрифт. */
 @font-face {
   font-family: "Dune Rise";
-  src: url("/fonts/DuneRise.ttf") format("truetype");
+  src:
+    url("/fonts/DuneRise.woff2") format("woff2"),
+    url("/fonts/DuneRise.ttf") format("truetype");
   font-display: swap;
 }
 
