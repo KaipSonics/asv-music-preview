@@ -34,6 +34,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Saved[]>([]);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [openIdx, setOpenIdx] = useState(0);
 
   const setters: Record<string, (v: Genre) => void> = {
     beat: setBeat,
@@ -84,6 +85,7 @@ export default function Home() {
         meta: data.meta,
       };
       persist([item, ...history].slice(0, MAX_HISTORY));
+      setOpenIdx(0); // открываем только что созданный
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка сети");
     } finally {
@@ -218,7 +220,8 @@ export default function Home() {
                 key={item.code}
                 item={item}
                 title={`Референс ${item.num}`}
-                index={i}
+                open={openIdx === i}
+                onToggle={() => setOpenIdx(openIdx === i ? -1 : i)}
               />
             ))}
           </div>

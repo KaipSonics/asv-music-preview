@@ -517,30 +517,93 @@ h3,
 .vcard {
   background: var(--card);
   border: 1px solid var(--card-border);
-  padding: 18px 20px;
   backdrop-filter: blur(12px);
-  animation: fadein 0.5s ease both;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  animation: fadein 0.45s ease both;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.vcard:hover {
-  transform: translateY(-3px);
+.vcard.open {
   border-color: var(--neon);
-  box-shadow: 0 0 28px var(--neon-glow);
+  box-shadow: 0 0 24px var(--neon-glow);
 }
 
-.vcard-head {
+/* складная строка */
+.vcard-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
+  gap: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+}
+
+.vcard-row:hover .vcard-name {
+  color: var(--neon);
+}
+
+.play-btn-sm {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--neon), #9af3ea);
+  color: var(--bg-deep);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: 0 0 14px var(--neon-glow);
+  transition: transform 0.15s ease;
+}
+
+.play-btn-sm:hover {
+  transform: scale(1.08);
+}
+
+.play-btn-sm svg {
+  fill: var(--bg-deep);
+}
+
+.vcard-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vcard-row-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vcard-chevron {
+  color: var(--neon);
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.vcard.open .vcard-chevron {
+  transform: rotate(180deg);
+}
+
+.vcard-body {
+  padding: 4px 18px 18px;
+  animation: fadein 0.3s ease;
+}
+
+.vcard-body .player {
+  margin-bottom: 16px;
 }
 
 .vcard-name {
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--text);
+  transition: color 0.15s ease;
 }
 
 .vcard-badge {
