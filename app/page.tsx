@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   GENRE_OPTIONS,
   ELEMENTS,
@@ -11,10 +11,13 @@ import {
   type MoodLabel,
   type TempoLabel,
 } from "@/lib/options";
+import VariantCard, { type Meta, type Variant } from "./VariantCard";
+import LoadingSteps from "./LoadingSteps";
 
 const TELEGRAM_URL = "https://t.me/asv_familyl";
+const STORAGE_KEY = "asv:lastResult";
 
-type Result = { audioUrl: string; title: string; subtitle: string };
+type GenResult = { meta: Meta; variants: Variant[] };
 
 export default function Home() {
   // Жанр по каждому элементу
@@ -28,7 +31,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<GenResult | null>(null);
 
   const setters: Record<string, (v: Genre) => void> = {
     beat: setBeat,
@@ -37,10 +40,17 @@ export default function Home() {
   };
   const values: Record<string, Genre> = { beat, bass, melody };
 
+  // Восстанавливаем последнюю генерацию из localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setResult(JSON.parse(raw) as GenResult);
+    } catch {}
+  }, []);
+
   async function handleGenerate() {
     setLoading(true);
     setError(null);
-    setResult(null);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -49,7 +59,11 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
-      setResult(data as Result);
+      const r: GenResult = { meta: data.meta, variants: data.variants };
+      setResult(r);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
+      } catch {}
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка сети");
     } finally {
@@ -65,11 +79,11 @@ export default function Home() {
           <span className="logo-prod">production</span>
         </div>
         <h1>
-          Собери свой <span className="accent">трек</span>
+          Собери <span className="accent">референс</span> будущего трека
         </h1>
         <p>
-          Выбери жанр для каждого элемента, настроение и темп —
-          нейросеть соберёт уникальное превью. Эклектика приветствуется.
+          Выбери бит, бас, мелодию, настроение и темп. Получи несколько
+          вариантов музыкального превью будущего трека.
         </p>
       </header>
 
@@ -151,35 +165,40 @@ export default function Home() {
           disabled={loading}
           type="button"
         >
-          {loading ? "Генерирую…" : "Создать превью"}
+          {loading ? "Создаём…" : "Создать превью"}
         </button>
 
-        <div className={`status ${error ? "error" : ""}`}>
-          {loading && (
-            <>
-              <span className="spinner" />
-              Нейросеть работает — это может занять до минуты…
-            </>
-          )}
-          {error && <>⚠ {error}</>}
-        </div>
-
-        {result && (
-          <div className="result">
-            <h3>{result.title}</h3>
-            <div className="desc">{result.subtitle}</div>
-            <audio controls controlsList="nodownload" src={result.audioUrl}>
-              Ваш браузер не поддерживает аудио.
-            </audio>
-          </div>
-        )}
+        {loading && <LoadingSteps />}
+        {error && <div className="status error">⚠ {error}</div>}
       </section>
 
-      <div className="cta">
-        <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
-          Обсудить проект →
-        </a>
-      </div>
+      {/* Результаты */}
+      {result && !loading && (
+        <section className="results">
+          <h2 className="results-title">Варианты превью</h2>
+          <div className="results-grid">
+            {result.variants.map((v, i) => (
+              <VariantCard key={v.name} variant={v} meta={result.meta} index={i} />
+            ))}
+          </div>
+
+          {/* Блок усиления конверсии */}
+          <div className="convert">
+            <h3>Понравилось направление?</h3>
+            <p>
+              Мы можем создать полноценную аранжировку на основе выбранного вайба.
+            </p>
+            <a
+              className="convert-btn"
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Обсудить проект →
+            </a>
+          </div>
+        </section>
+      )}
 
       <p className="footnote">
         Превью генерируется ИИ и доступно только для прослушивания. © ASV Production

@@ -1,6 +1,9 @@
 // app/api/generate/route.ts
-// Серверный роут: принимает выбор пользователя, генерирует аудио.
+// Серверный роут: принимает выбор пользователя, генерирует НЕСКОЛЬКО вариантов превью.
 // Работает на сервере Railway (вне РФ), поэтому пользователю VPN не нужен.
+//
+// AUDIO_PROVIDER=demo → возвращаем заранее записанные демо-клипы (звук уже слышно,
+// пока не подключён платный генератор). Любой другой провайдер → реальная генерация.
 
 import { NextRequest, NextResponse } from "next/server";
 import { generateAudio } from "@/lib/musicgen";
@@ -10,17 +13,17 @@ import {
   TEMPOS,
   ELEMENTS,
   buildPrompt,
-  buildTitle,
-  buildSubtitle,
   type Selection,
   type Genre,
   type MoodLabel,
   type TempoLabel,
 } from "@/lib/options";
 
-// Генерация может занять до минуты — даём роуту время.
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
+
+const VARIANT_NAMES = ["Вариант A", "Вариант B", "Вариант C"];
+const DEMO_FILES = ["/demo/a.wav", "/demo/b.wav", "/demo/c.wav"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,21 +53,41 @@ export async function POST(req: NextRequest) {
     sel.mood = mood;
     sel.tempo = tempo;
 
-    // Необязательный комментарий к референсу (помогает и модели, и заявке)
     const reference =
       typeof body.reference === "string" ? body.reference.trim().slice(0, 600) : "";
 
-    let prompt = buildPrompt(sel);
-    if (reference) prompt += ` Reference notes: ${reference}.`;
+    const basePrompt = buildPrompt(sel);
+    const prompt = reference ? `${basePrompt} Reference notes: ${reference}.` : basePrompt;
 
-    const result = await generateAudio(prompt);
+    // Метаданные — одни на все варианты (показываем в каждой карточке)
+    const meta = {
+      beat: sel.beat,
+      bass: sel.bass,
+      melody: sel.melody,
+      mood: sel.mood,
+      tempo: sel.tempo,
+    };
 
-    return NextResponse.json({
-      audioUrl: result.audioUrl,
-      prompt,
-      title: buildTitle(sel),
-      subtitle: buildSubtitle(sel),
-    });
+    const provider = (process.env.AUDIO_PROVIDER || "demo").toLowerCase();
+
+    let variants: { name: string; audioUrl: string }[];
+
+    if (provider === "demo") {
+      variants = VARIANT_NAMES.map((name, i) => ({ name, audioUrl: DEMO_FILES[i] }));
+    } else {
+      // Реальная генерация: 3 варианта параллельно, с лёгкой вариацией промпта
+      const results = await Promise.all(
+        VARIANT_NAMES.map((_, i) =>
+          generateAudio(`${prompt} (variation ${i + 1})`)
+        )
+      );
+      variants = results.map((r, i) => ({
+        name: VARIANT_NAMES[i],
+        audioUrl: r.audioUrl,
+      }));
+    }
+
+    return NextResponse.json({ meta, variants, prompt });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Неизвестная ошибка";
     console.error("Ошибка генерации:", message);
