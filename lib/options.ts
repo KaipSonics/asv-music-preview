@@ -99,6 +99,24 @@ export type Selection = {
 
 // ───────────────────────── Сборка промпта ─────────────────────────
 
+// Структура трека: 4 такта хук + 4 такта куплет = 8 тактов
+export const BARS_HOOK = 4;
+export const BARS_VERSE = 4;
+export const BARS_TOTAL = BARS_HOOK + BARS_VERSE;
+const BEATS_PER_BAR = 4;
+
+// BPM по жанру бита + выбранному темпу
+export function getBpm(sel: Selection): number {
+  const idx = TEMPOS.find((t) => t.label === sel.tempo)?.idx ?? 1;
+  return BPM[sel.beat as Genre][idx];
+}
+
+// Длительность ровно под 8 тактов
+export function getSeconds(sel: Selection): number {
+  const bpm = getBpm(sel);
+  return Math.round((BARS_TOTAL * BEATS_PER_BAR * 60) / bpm);
+}
+
 export function buildPrompt(sel: Selection): string {
   const parts = ELEMENTS.map(
     (el) => `${GENRE_EN[sel[el.key] as Genre]} ${el.role}`
@@ -106,12 +124,14 @@ export function buildPrompt(sel: Selection): string {
 
   const layers = `eclectic instrumental track combining ${parts.join(", ")}`;
   const moodHint = MOODS.find((m) => m.label === sel.mood)?.hint || "";
-
   const tempo = TEMPOS.find((t) => t.label === sel.tempo);
-  const idx = tempo?.idx ?? 1;
-  const bpm = BPM[sel.beat as Genre][idx];
+  const bpm = getBpm(sel);
 
-  return `${layers}. Mood: ${moodHint}. ${tempo?.hint || ""}, around ${bpm} bpm. high quality, catchy hook, no vocals.`;
+  return (
+    `${layers}. Mood: ${moodHint}. ${tempo?.hint || ""}, ${bpm} bpm. ` +
+    `Structure: ${BARS_HOOK}-bar hook then ${BARS_VERSE}-bar verse, exactly ${BARS_TOTAL} bars. ` +
+    `instrumental, no vocals, high quality.`
+  );
 }
 
 // Короткое читаемое название результата

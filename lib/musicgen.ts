@@ -11,18 +11,22 @@
 
 export type GenResult = { audioUrl: string; contentType: string };
 
+// Доп. параметры генерации: длительность (под нужное число тактов),
+// код заявки и комментарий к референсу (для будущей привязки в GenAPI).
+export type GenOpts = { seconds?: number; code?: string; reference?: string };
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // ───────────────────────── fal.ai (стартовые кредиты) ─────────────────────────
 
-async function generateFal(prompt: string): Promise<GenResult> {
+async function generateFal(prompt: string, opts?: GenOpts): Promise<GenResult> {
   const key = process.env.FAL_KEY;
   if (!key) {
     throw new Error("Нет ключа fal.ai. Задай FAL_KEY в переменных окружения (Railway → Variables).");
   }
 
   const model = process.env.FAL_MODEL || "fal-ai/stable-audio";
-  const seconds = Number(process.env.FAL_SECONDS || 15);
+  const seconds = opts?.seconds ?? Number(process.env.FAL_SECONDS || 15);
 
   // Очередь fal: ставим задачу, затем опрашиваем статус.
   const submitRes = await fetch(`https://queue.fal.run/${model}`, {
@@ -128,7 +132,7 @@ async function generateHuggingFace(prompt: string): Promise<GenResult> {
 
 // ───────────────────────── Replicate (платно) ─────────────────────────
 
-async function generateReplicate(prompt: string): Promise<GenResult> {
+async function generateReplicate(prompt: string, opts?: GenOpts): Promise<GenResult> {
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
     throw new Error("Нет токена Replicate. Задай REPLICATE_API_TOKEN в переменных окружения.");
@@ -146,7 +150,7 @@ async function generateReplicate(prompt: string): Promise<GenResult> {
     },
     body: JSON.stringify({
       version,
-      input: { prompt, duration: 8, output_format: "mp3" },
+      input: { prompt, duration: opts?.seconds ?? 8, output_format: "mp3" },
     }),
   });
 
@@ -176,9 +180,12 @@ async function generateReplicate(prompt: string): Promise<GenResult> {
 
 // ───────────────────────── Точка входа ─────────────────────────
 
-export async function generateAudio(prompt: string): Promise<GenResult> {
+export async function generateAudio(
+  prompt: string,
+  opts?: GenOpts
+): Promise<GenResult> {
   const provider = (process.env.AUDIO_PROVIDER || "fal").toLowerCase();
-  if (provider === "replicate") return generateReplicate(prompt);
+  if (provider === "replicate") return generateReplicate(prompt, opts);
   if (provider === "huggingface") return generateHuggingFace(prompt);
-  return generateFal(prompt);
+  return generateFal(prompt, opts);
 }

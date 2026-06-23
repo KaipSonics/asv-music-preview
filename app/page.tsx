@@ -11,13 +11,14 @@ import {
   type MoodLabel,
   type TempoLabel,
 } from "@/lib/options";
-import VariantCard, { type Meta, type Variant } from "./VariantCard";
+import VariantCard, { type RefItem } from "./VariantCard";
 import LoadingSteps from "./LoadingSteps";
 
 const VK_URL = "https://vk.com/asv_family";
-const STORAGE_KEY = "asv:lastResult";
+const STORAGE_KEY = "asv:history";
+const MAX_HISTORY = 5;
 
-type GenResult = { meta: Meta; variants: Variant[]; code?: string };
+type Saved = RefItem & { num: number };
 
 export default function Home() {
   // Жанр по каждому элементу
@@ -31,16 +32,8 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<GenResult | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  function copyCode() {
-    if (!result?.code) return;
-    navigator.clipboard?.writeText(result.code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
+  const [history, setHistory] = useState<Saved[]>([]);
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   const setters: Record<string, (v: Genre) => void> = {
     beat: setBeat,
@@ -49,13 +42,22 @@ export default function Home() {
   };
   const values: Record<string, Genre> = { beat, bass, melody };
 
-  // Восстанавливаем последнюю генерацию из localStorage
+  // Восстанавливаем сохранённые референсы
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setResult(JSON.parse(raw) as GenResult);
+      if (raw) setHistory(JSON.parse(raw) as Saved[]);
     } catch {}
   }, []);
+
+  function persist(list: Saved[]) {
+    setHistory(list);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch {}
+  }
+
+  const limitReached = remaining !== null && remaining <= 0;
 
   async function handleGenerate() {
     setLoading(true);
@@ -67,16 +69,21 @@ export default function Home() {
         body: JSON.stringify({ beat, bass, melody, mood, tempo, reference }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Не удалось сгенерировать");
-      const r: GenResult = {
-        meta: data.meta,
-        variants: data.variants,
+      if (!res.ok) {
+        if (typeof data.remaining === "number") setRemaining(data.remaining);
+        throw new Error(data.error || "Не удалось сгенерировать");
+      }
+      if (typeof data.remaining === "number") setRemaining(data.remaining);
+
+      const nextNum = (history[0]?.num || 0) + 1;
+      const item: Saved = {
+        num: nextNum,
         code: data.code,
+        audioUrl: data.audioUrl,
+        reference: data.reference,
+        meta: data.meta,
       };
-      setResult(r);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
-      } catch {}
+      persist([item, ...history].slice(0, MAX_HISTORY));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка сети");
     } finally {
@@ -103,9 +110,9 @@ export default function Home() {
       </header>
 
       <section className="panel">
-        {/* Элементы трека — выпадающие списки */}
+        {/* Элементы по жанрам — выпадающие списки */}
         <div className="field">
-          <div className="field-label">Жанр по элементам</div>
+          <div className="field-label">Элементы по жанрам</div>
           <div className="elements">
             {ELEMENTS.map((el) => (
               <label className="element-row" key={el.key}>
@@ -131,14 +138,14 @@ export default function Home() {
         <div className="field">
           <div className="field-label">Настроение</div>
           <div className="chips">
-            {MOODS.map((m) => (
+            {MOODS.map((mItem) => (
               <button
-                key={m.label}
-                className={`chip ${mood === m.label ? "active" : ""}`}
-                onClick={() => setMood(m.label)}
+                key={mItem.label}
+                className={`chip ${mood === mItem.label ? "active" : ""}`}
+                onClick={() => setMood(mItem.label)}
                 type="button"
               >
-                {m.label}
+                {mItem.label}
               </button>
             ))}
           </div>
@@ -177,43 +184,49 @@ export default function Home() {
         <button
           className="generate-btn"
           onClick={handleGenerate}
-          disabled={loading}
+          disabled={loading || limitReached}
           type="button"
         >
-          {loading ? "Создаём…" : "Создать превью"}
+          {loading
+            ? "Создаём…"
+            : limitReached
+            ? "Лимит на сегодня исчерпан"
+            : "Создать референс"}
         </button>
+
+        {remaining !== null && !loading && (
+          <div className="limit-note">
+            Осталось генераций сегодня: <b>{remaining}</b> из 5
+          </div>
+        )}
 
         {loading && <LoadingSteps />}
         {error && <div className="status error">⚠ {error}</div>}
       </section>
 
-      {/* Результаты */}
-      {result && !loading && (
+      {/* Сохранённые референсы */}
+      {history.length > 0 && !loading && (
         <section className="results">
-          <h2 className="results-title">Варианты превью</h2>
+          <h2 className="results-title">Твои референсы</h2>
+          <p className="results-sub">
+            Сохраняются последние {MAX_HISTORY}. Выбери лучший, скопируй его код
+            и отправь нам в VK.
+          </p>
           <div className="results-grid">
-            {result.variants.map((v, i) => (
-              <VariantCard key={v.name} variant={v} meta={result.meta} index={i} />
+            {history.map((item, i) => (
+              <VariantCard
+                key={item.code}
+                item={item}
+                title={`Референс ${item.num}`}
+                index={i}
+              />
             ))}
           </div>
 
           {/* Блок усиления конверсии */}
           <div className="convert">
             <h3>Понравилось направление?</h3>
-            <p>
-              Мы создадим полноценную аранжировку на основе выбранного вайба.
-            </p>
-
-            {result.code && (
-              <div className="order-code">
-                <span className="order-code-label">Код заявки</span>
-                <span className="order-code-value">{result.code}</span>
-                <button type="button" className="copy-btn" onClick={copyCode}>
-                  {copied ? "Скопировано ✓" : "Скопировать"}
-                </button>
-              </div>
-            )}
-
+            <p>Мы создадим полноценную аранжировку на основе выбранного вайба.</p>
             <a
               className="convert-btn"
               href={VK_URL}
@@ -222,17 +235,16 @@ export default function Home() {
             >
               Оформить заявку в VK →
             </a>
-
             <p className="convert-hint">
-              Напишите этот код в сообщения нашего паблика — подберём по нему
-              ваш референс.
+              Скопируй код понравившегося референса и пришли его в сообщения
+              нашего паблика — подберём по нему трек.
             </p>
           </div>
         </section>
       )}
 
       <p className="footnote">
-        Превью генерируется ИИ и доступно только для прослушивания. © ASV Production
+        Референс генерируется ИИ и доступен только для прослушивания. © ASV Production
       </p>
     </main>
   );

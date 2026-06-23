@@ -10,7 +10,12 @@ export type Meta = {
   tempo: string;
 };
 
-export type Variant = { name: string; audioUrl: string };
+export type RefItem = {
+  code: string;
+  audioUrl: string;
+  meta: Meta;
+  reference?: string;
+};
 
 function fmt(s: number) {
   if (!isFinite(s)) return "0:00";
@@ -20,18 +25,19 @@ function fmt(s: number) {
 }
 
 export default function VariantCard({
-  variant,
-  meta,
+  item,
+  title,
   index,
 }: {
-  variant: Variant;
-  meta: Meta;
+  item: RefItem;
+  title: string;
   index: number;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -65,33 +71,40 @@ export default function VariantCard({
     const a = audioRef.current;
     if (!a || !dur) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    a.currentTime = ratio * dur;
+    a.currentTime = ((e.clientX - rect.left) / rect.width) * dur;
+  }
+
+  function copyCode() {
+    navigator.clipboard?.writeText(item.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   const pct = dur ? (cur / dur) * 100 : 0;
+  const m = item.meta;
 
   return (
-    <div className="vcard" style={{ animationDelay: `${index * 0.08}s` }}>
+    <div className="vcard" style={{ animationDelay: `${index * 0.06}s` }}>
       <div className="vcard-head">
-        <span className="vcard-name">{variant.name}</span>
+        <span className="vcard-name">{title}</span>
         <span className="vcard-badge">
-          {meta.mood} · {meta.tempo}
+          {m.mood} · {m.tempo}
         </span>
       </div>
 
       <div className="vcard-meta">
         <span>
           <i>Бит</i>
-          {meta.beat}
+          {m.beat}
         </span>
         <span>
           <i>Бас</i>
-          {meta.bass}
+          {m.bass}
         </span>
         <span>
           <i>Мелодия</i>
-          {meta.melody}
+          {m.melody}
         </span>
       </div>
 
@@ -125,7 +138,15 @@ export default function VariantCard({
         </div>
       </div>
 
-      <audio ref={audioRef} src={variant.audioUrl} preload="metadata" />
+      <div className="vcard-code">
+        <span className="vcard-code-label">Код</span>
+        <span className="vcard-code-value">{item.code}</span>
+        <button type="button" className="copy-btn" onClick={copyCode}>
+          {copied ? "Скопировано ✓" : "Скопировать"}
+        </button>
+      </div>
+
+      <audio ref={audioRef} src={item.audioUrl} preload="metadata" />
     </div>
   );
 }

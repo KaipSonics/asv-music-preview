@@ -731,6 +731,50 @@ h3,
   color: var(--text-dim);
 }
 
+.results-sub {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+  margin: -8px 0 18px;
+}
+
+.limit-note {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.limit-note b {
+  color: var(--neon);
+}
+
+.vcard-code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vcard-code-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.vcard-code-value {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  color: var(--neon);
+  flex: 1;
+}
+
 @media (max-width: 560px) {
   .element-row {
     grid-template-columns: 84px 1fr;
