@@ -26,15 +26,37 @@ export type Genre = (typeof GENRES)[number];
 
 export const GENRE_OPTIONS: Genre[] = [...GENRES];
 
-const GENRE_EN: Record<Genre, string> = {
-  POP: "pop",
-  "POP DANCE": "dance-pop, pop dance",
-  HOUSE: "house",
-  "HIP-HOP": "hip-hop",
-  TRAP: "trap",
-  DNB: "drum and bass",
-  ROCK: "rock",
-  DANCEHALL: "dancehall",
+// Конкретные инструменты по жанру и роли — чтобы нейросеть реально
+// использовала звуки жанра (а не игнорила абстрактное «in rock style»).
+const BEAT_INSTR: Record<Genre, string> = {
+  POP: "pop drums",
+  "POP DANCE": "four-on-the-floor dance drums",
+  HOUSE: "four-on-the-floor house drums",
+  "HIP-HOP": "boom-bap drums",
+  TRAP: "trap drums with 808 hi-hats",
+  DNB: "fast breakbeat drums",
+  ROCK: "live rock drums",
+  DANCEHALL: "dancehall riddim drums",
+};
+const BASS_INSTR: Record<Genre, string> = {
+  POP: "warm bass",
+  "POP DANCE": "punchy dance bass",
+  HOUSE: "deep house bass",
+  "HIP-HOP": "boom-bap bass",
+  TRAP: "808 sub bass",
+  DNB: "reese bass",
+  ROCK: "electric bass guitar",
+  DANCEHALL: "dub bass",
+};
+const MELODY_INSTR: Record<Genre, string> = {
+  POP: "bright synth lead",
+  "POP DANCE": "catchy synth lead",
+  HOUSE: "house piano stabs",
+  "HIP-HOP": "soulful keys",
+  TRAP: "dark bell lead",
+  DNB: "atmospheric synth lead",
+  ROCK: "electric guitar lead",
+  DANCEHALL: "skank guitar",
 };
 
 // Характерный BPM по жанру бита: [slow, mid, fast]
@@ -121,20 +143,20 @@ export function getSeconds(sel: Selection): number {
 }
 
 export function buildPrompt(sel: Selection): string {
-  const beat = GENRE_EN[sel.beat as Genre];
-  const bass = GENRE_EN[sel.bass as Genre];
-  const melody = GENRE_EN[sel.melody as Genre];
+  const beat = BEAT_INSTR[sel.beat as Genre];
+  const bass = BASS_INSTR[sel.bass as Genre];
+  const melody = MELODY_INSTR[sel.melody as Genre];
   const moodShort = (MOODS.find((m) => m.label === sel.mood)?.hint || "")
     .split(",")[0]
     .trim();
   const bpm = getBpm(sel);
 
-  // Директивно: бит = доминирующий жанр; луп-режим — ровная повторяющаяся
-  // структура без частых смен партов (важное в начале, чтобы не обрезалось).
+  // Называем конкретные инструменты; мелодию подчёркиваем явно («prominent»),
+  // чтобы её не игнорировало. Луп-режим — ровная повторяющаяся структура.
   return (
-    `${beat}, ${bpm} bpm, instrumental loop, no vocals. ` +
-    `Repetitive steady ${beat} groove, minimal structure changes. ` +
-    `${beat} drums dominant, ${bass} bass, ${melody} melody. ${moodShort}.`
+    `${bpm} bpm ${beat} instrumental loop. ` +
+    `Lead melody: prominent ${melody}. ${bass}. ` +
+    `${moodShort}, no vocals, steady repetitive groove, minimal structure changes.`
   ).slice(0, 195);
 }
 

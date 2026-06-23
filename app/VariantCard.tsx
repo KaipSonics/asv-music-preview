@@ -17,6 +17,9 @@ export type RefItem = {
   reference?: string;
 };
 
+// Превью ограничено минутой
+const PREVIEW_LIMIT = 60;
+
 function fmt(s: number) {
   if (!isFinite(s)) return "0:00";
   const m = Math.floor(s / 60);
@@ -44,7 +47,15 @@ export default function VariantCard({
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setCur(a.currentTime);
+    const onTime = () => {
+      setCur(a.currentTime);
+      if (a.currentTime >= PREVIEW_LIMIT) {
+        a.pause();
+        a.currentTime = 0;
+        setPlaying(false);
+        setCur(0);
+      }
+    };
     const onMeta = () => setDur(a.duration);
     const onEnd = () => setPlaying(false);
     a.addEventListener("timeupdate", onTime);
@@ -65,16 +76,19 @@ export default function VariantCard({
       a.pause();
       setPlaying(false);
     } else {
+      if (a.currentTime >= PREVIEW_LIMIT - 0.2) a.currentTime = 0;
       a.play();
       setPlaying(true);
     }
   }
 
+  const effDur = dur ? Math.min(dur, PREVIEW_LIMIT) : 0;
+
   function seek(e: React.MouseEvent<HTMLDivElement>) {
     const a = audioRef.current;
-    if (!a || !dur) return;
+    if (!a || !effDur) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    a.currentTime = ((e.clientX - rect.left) / rect.width) * dur;
+    a.currentTime = ((e.clientX - rect.left) / rect.width) * effDur;
   }
 
   function copyCode(e: React.MouseEvent) {
@@ -85,7 +99,7 @@ export default function VariantCard({
     });
   }
 
-  const pct = dur ? (cur / dur) * 100 : 0;
+  const pct = effDur ? (cur / effDur) * 100 : 0;
   const m = item.meta;
 
   return (
@@ -130,7 +144,7 @@ export default function VariantCard({
               </div>
               <div className="time">
                 <span>{fmt(cur)}</span>
-                <span>{fmt(dur)}</span>
+                <span>{fmt(effDur)}</span>
               </div>
             </div>
           </div>
