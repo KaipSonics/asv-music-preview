@@ -24,7 +24,7 @@ import {
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
-const DAILY_LIMIT = 5;
+const DAILY_LIMIT = 3;
 const DEMO_FILES = ["/demo/a.wav", "/demo/b.wav", "/demo/c.wav"];
 
 // Счётчик генераций по IP (в памяти; сбрасывается при рестарте сервера).

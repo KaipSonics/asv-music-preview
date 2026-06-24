@@ -16,7 +16,7 @@ import LoadingSteps from "./LoadingSteps";
 
 const VK_URL = "https://vk.com/asv_family";
 const STORAGE_KEY = "asv:history";
-const MAX_HISTORY = 5;
+const MAX_HISTORY = 3;
 
 type Saved = RefItem & { num: number };
 
@@ -216,7 +216,7 @@ export default function Home() {
 
         {remaining !== null && !loading && (
           <div className="limit-note">
-            Осталось генераций сегодня: <b>{remaining}</b> из 5
+            Осталось генераций сегодня: <b>{remaining}</b> из 3
           </div>
         )}
 

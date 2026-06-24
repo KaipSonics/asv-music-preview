@@ -26,37 +26,28 @@ export type Genre = (typeof GENRES)[number];
 
 export const GENRE_OPTIONS: Genre[] = [...GENRES];
 
-// Конкретные инструменты по жанру и роли — чтобы нейросеть реально
-// использовала звуки жанра (а не игнорила абстрактное «in rock style»).
-const BEAT_INSTR: Record<Genre, string> = {
-  POP: "pop drums",
-  "POP DANCE": "four-on-the-floor dance drums",
-  HOUSE: "four-on-the-floor house drums",
-  "HIP-HOP": "boom-bap drums",
-  TRAP: "trap drums with 808 hi-hats",
-  DNB: "fast breakbeat drums",
-  ROCK: "live rock drums",
-  DANCEHALL: "dancehall riddim drums",
+// Чистые названия жанров (для бита-главного жанра и баса-влияния).
+const GENRE_EN: Record<Genre, string> = {
+  POP: "pop",
+  "POP DANCE": "dance-pop",
+  HOUSE: "house",
+  "HIP-HOP": "hip-hop",
+  TRAP: "trap",
+  DNB: "drum and bass",
+  ROCK: "rock",
+  DANCEHALL: "dancehall",
 };
-const BASS_INSTR: Record<Genre, string> = {
-  POP: "warm bass",
-  "POP DANCE": "punchy dance bass",
-  HOUSE: "deep house bass",
-  "HIP-HOP": "boom-bap bass",
-  TRAP: "808 sub bass",
-  DNB: "reese bass",
-  ROCK: "electric bass guitar",
-  DANCEHALL: "dub bass",
-};
+
+// Очевидный инструмент мелодии по жанру (чтобы мелодию не игнорило).
 const MELODY_INSTR: Record<Genre, string> = {
-  POP: "bright synth lead",
-  "POP DANCE": "catchy synth lead",
-  HOUSE: "house piano stabs",
-  "HIP-HOP": "soulful keys",
-  TRAP: "dark bell lead",
-  DNB: "atmospheric synth lead",
-  ROCK: "electric guitar lead",
-  DANCEHALL: "skank guitar",
+  POP: "synth",
+  "POP DANCE": "synth",
+  HOUSE: "piano",
+  "HIP-HOP": "keys",
+  TRAP: "bells",
+  DNB: "synth",
+  ROCK: "guitar",
+  DANCEHALL: "guitar",
 };
 
 // Характерный BPM по жанру бита: [slow, mid, fast]
@@ -143,20 +134,22 @@ export function getSeconds(sel: Selection): number {
 }
 
 export function buildPrompt(sel: Selection): string {
-  const beat = BEAT_INSTR[sel.beat as Genre];
-  const bass = BASS_INSTR[sel.bass as Genre];
-  const melody = MELODY_INSTR[sel.melody as Genre];
-  const moodShort = (MOODS.find((m) => m.label === sel.mood)?.hint || "")
+  const mainGenre = GENRE_EN[sel.beat as Genre]; // бит = главный жанр (~50%)
+  const bassGenre = GENRE_EN[sel.bass as Genre]; // бас = влияние (~25%)
+  const melodyGenre = GENRE_EN[sel.melody as Genre]; // мелодия = влияние (~25%)
+  const melodyInstr = MELODY_INSTR[sel.melody as Genre];
+  const moodWord = (MOODS.find((m) => m.label === sel.mood)?.hint || "")
     .split(",")[0]
     .trim();
+  const tempoHint = TEMPOS.find((t) => t.label === sel.tempo)?.hint || "tempo";
   const bpm = getBpm(sel);
 
-  // Называем конкретные инструменты; мелодию подчёркиваем явно («prominent»),
-  // чтобы её не игнорировало. Луп-режим — ровная повторяющаяся структура.
+  // Один цельный образ трека. Приоритет (на случай обрезки 200 символов):
+  // настроение → темп → главный жанр (бит) → влияние баса → влияние мелодии.
   return (
-    `${bpm} bpm ${beat} instrumental loop. ` +
-    `Lead melody: prominent ${melody}. ${bass}. ` +
-    `${moodShort}, no vocals, steady repetitive groove, minimal structure changes.`
+    `${moodWord} ${mainGenre} instrumental track, ${tempoHint}, ${bpm} bpm, no vocals. ` +
+    `With ${bassGenre} bass influence and ${melodyGenre} ${melodyInstr} melody. ` +
+    `Steady repetitive loop.`
   ).slice(0, 195);
 }
 
