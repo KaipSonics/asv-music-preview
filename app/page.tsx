@@ -113,6 +113,7 @@ export default function Home() {
 
   return (
     <main className="wrap">
+      <a className="back-link" href="https://asvproduction.ru">← Вернуться на сайт</a>
       <header className="hero">
         <div className="logo">
           <span className="logo-asv">ASV</span>
